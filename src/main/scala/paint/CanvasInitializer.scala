@@ -1,0 +1,39 @@
+package paint
+
+import org.scalajs.dom
+import org.scalajs.dom._
+import org.scalajs.dom.html.Canvas
+
+trait CanvasInitializer { self =>
+    def initialise(canvas: html.Canvas): Unit
+    def andThen(next: CanvasInitializer): CanvasInitializer = new CanvasInitializer {
+        override def initialise(canvas: html.Canvas): Unit = {
+            self.initialise(canvas)
+            next.initialise(canvas)
+        }
+    }
+}
+
+case class FullWindowCanvasInitializer(document: Document, window: Window) extends CanvasInitializer {
+    def initialise(canvas: html.Canvas) = {
+        val (width, height) = windowSize(document, window)
+        canvas.width = width
+        canvas.height = height
+    }
+
+    private def windowSize(document: Document, window: Window) = (
+        Math.max(document.documentElement.clientWidth, window.innerWidth).toInt,
+        Math.max(document.documentElement.clientHeight, window.innerHeight).toInt
+    )
+}
+
+case class ColorCanvasInitializer(color: String) extends CanvasInitializer {
+    override def initialise(canvas: html.Canvas): Unit = {
+        val ctx = canvas.getContext("2d")
+            .asInstanceOf[dom.CanvasRenderingContext2D]
+        val oldFillStyle = ctx.fillStyle.toString
+        ctx.fillStyle = color
+        ctx.fillRect(0, 0, canvas.width.toDouble, canvas.height.toDouble)
+        ctx.fillStyle = oldFillStyle
+    }
+}
