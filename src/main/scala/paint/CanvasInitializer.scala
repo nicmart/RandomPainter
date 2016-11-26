@@ -5,9 +5,9 @@ import org.scalajs.dom._
 import org.scalajs.dom.html.Canvas
 
 trait CanvasInitializer { self =>
-    def initialise(canvas: html.Canvas): Unit
+    def initialise(canvas: dom.html.Canvas): Unit
     def andThen(next: CanvasInitializer): CanvasInitializer = new CanvasInitializer {
-        override def initialise(canvas: html.Canvas): Unit = {
+        override def initialise(canvas: dom.html.Canvas): Unit = {
             self.initialise(canvas)
             next.initialise(canvas)
         }
@@ -15,7 +15,7 @@ trait CanvasInitializer { self =>
 }
 
 case class FullWindowCanvasInitializer(document: Document, window: Window) extends CanvasInitializer {
-    def initialise(canvas: html.Canvas) = {
+    def initialise(canvas: dom.html.Canvas): Unit = {
         val (width, height) = windowSize(document, window)
         canvas.width = width
         canvas.height = height
@@ -28,7 +28,7 @@ case class FullWindowCanvasInitializer(document: Document, window: Window) exten
 }
 
 case class ColorCanvasInitializer(color: String) extends CanvasInitializer {
-    override def initialise(canvas: html.Canvas): Unit = {
+    override def initialise(canvas: dom.html.Canvas): Unit = {
         val ctx = canvas.getContext("2d")
             .asInstanceOf[dom.CanvasRenderingContext2D]
         val oldFillStyle = ctx.fillStyle.toString
