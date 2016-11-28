@@ -11,7 +11,9 @@ trait RenderingContext {
 }
 
 class NativeRenderingContext(inner: CanvasRenderingContext2D) extends RenderingContext {
-    override def fillRect(x: Double, y: Double, w: Double, h: Double): Unit = inner.fillRect(x, y, w, h)
+    override def fillRect(x: Double, y: Double, w: Double, h: Double): Unit = {
+        inner.fillRect(x, y, w, h)
+    }
 }
 
 class TransformedCanvasRenderingContext2D(
@@ -26,8 +28,8 @@ class TransformedCanvasRenderingContext2D(
         original.fillRect(
             newFrom.x,
             newFrom.y,
-            newTo.x - newFrom.x,
-            newTo.y - newFrom.y
+            w,
+            h
         )
     }
 }
