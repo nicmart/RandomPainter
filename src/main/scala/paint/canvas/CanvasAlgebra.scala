@@ -13,17 +13,29 @@ trait CanvasAlgebra[T] {
     def sequence(ts: T*): T
 }
 
-trait CanvasDrawing[T] {
-    def draw(canvasAlgebra: CanvasAlgebra[T]): T
+trait CanvasDrawing {
+    def draw[T](canvasAlgebra: CanvasAlgebra[T]): T
 }
 
 object CanvasDrawing {
-    def apply[T](drawing: CanvasAlgebra[T] => T): CanvasDrawing[T] = new CanvasDrawing[T] {
-        override def draw(canvasAlgebra: CanvasAlgebra[T]): T = drawing(canvasAlgebra)
+    val empty = new CanvasDrawing {
+        override def draw[T](canvasAlgebra: CanvasAlgebra[T]) = canvasAlgebra.sequence()
+    }
+
+    def fillRect(x: Double, y: Double, w: Double, h: Double): CanvasDrawing = new CanvasDrawing {
+        override def draw[T](canvasAlgebra: CanvasAlgebra[T]) =
+            canvasAlgebra.fillRect(x, y, w, h)
+    }
+
+    def append(drawing1: CanvasDrawing, drawing2: CanvasDrawing): CanvasDrawing = new CanvasDrawing {
+        override def draw[T](canvasAlgebra: CanvasAlgebra[T]) = canvasAlgebra.sequence(
+            drawing1.draw(canvasAlgebra),
+            drawing2.draw(canvasAlgebra)
+        )
     }
 }
 
-object DrawHtmlCanvas extends CanvasAlgebra[CanvasRenderingContext2D => Unit] {
+object DrawHtmlAlgebra extends CanvasAlgebra[CanvasRenderingContext2D => Unit] {
     override def fillRect(x: Double, y: Double, w: Double, h: Double) =
         _.fillRect(x, y, w, h)
     override def sequence(ts: (CanvasRenderingContext2D => Unit)*) =
@@ -34,14 +46,14 @@ object DrawHtmlCanvas extends CanvasAlgebra[CanvasRenderingContext2D => Unit] {
         }
 }
 
-case class NoiseAdderAlgebra[T](radius: Double) extends CanvasAlgebra[CanvasDrawing[T]] {
+case class NoiseAdderAlgebra(radius: Double) extends CanvasAlgebra[CanvasDrawing] {
 
-    override def fillRect(x: Double, y: Double, w: Double, h: Double): CanvasDrawing[T] = {
+    override def fillRect(x: Double, y: Double, w: Double, h: Double): CanvasDrawing = {
         val offsetX = Random.nextDouble() * 2 * radius - radius
         val offsetY = Random.nextDouble() * 2 * radius - radius
 
-        new CanvasDrawing[T] {
-            override def draw(canvasAlgebra: CanvasAlgebra[T]) = canvasAlgebra.fillRect(
+        new CanvasDrawing {
+            override def draw[T](canvasAlgebra: CanvasAlgebra[T]) = canvasAlgebra.fillRect(
                 x + offsetX,
                 y + offsetY,
                 w,
@@ -50,18 +62,18 @@ case class NoiseAdderAlgebra[T](radius: Double) extends CanvasAlgebra[CanvasDraw
         }
     }
 
-    override def sequence(ts: CanvasDrawing[T]*): CanvasDrawing[T] = new CanvasDrawing[T] {
-        override def draw(canvasAlgebra: CanvasAlgebra[T]) = canvasAlgebra.sequence(
-            ts.map(drawing => drawing(canvasAlgebra)): _*
+    override def sequence(ts: CanvasDrawing*): CanvasDrawing = new CanvasDrawing {
+        override def draw[T](canvasAlgebra: CanvasAlgebra[T]) = canvasAlgebra.sequence(
+            ts.map(drawing => drawing.draw(canvasAlgebra)): _*
         )
     }
 }
 
-case class PlaneTransformationAlgebra[T](transformation: PlaneTransformation) extends CanvasAlgebra[CanvasDrawing[T]] {
-    override def fillRect(x: Double, y: Double, w: Double, h: Double): CanvasDrawing[T] = {
+case class PlaneTransformationAlgebra(transformation: PlaneTransformation) extends CanvasAlgebra[CanvasDrawing] {
+    override def fillRect(x: Double, y: Double, w: Double, h: Double): CanvasDrawing = {
         val newPoint = transformation(DoublePoint(x, y))
-        new CanvasDrawing[T] {
-            override def draw(canvasAlgebra: CanvasAlgebra[T]) = canvasAlgebra.fillRect(
+        new CanvasDrawing {
+            override def draw[T](canvasAlgebra: CanvasAlgebra[T]) = canvasAlgebra.fillRect(
                 newPoint.x,
                 newPoint.y,
                 w,
@@ -69,9 +81,9 @@ case class PlaneTransformationAlgebra[T](transformation: PlaneTransformation) ex
             )
         }
     }
-    override def sequence(ts: CanvasDrawing[T]*): CanvasDrawing[T] =  new CanvasDrawing[T] {
-        override def draw(canvasAlgebra: CanvasAlgebra[T]) = canvasAlgebra.sequence(
-            ts.map(drawing => drawing(canvasAlgebra)): _*
+    override def sequence(ts: CanvasDrawing*): CanvasDrawing =  new CanvasDrawing {
+        override def draw[T](canvasAlgebra: CanvasAlgebra[T]) = canvasAlgebra.sequence(
+            ts.map(drawing => drawing.draw(canvasAlgebra)): _*
         )
     }
 }

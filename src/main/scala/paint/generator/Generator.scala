@@ -1,20 +1,21 @@
 package paint.generator
 
 import paint.Canvas.CanvasAction
+import paint.canvas.CanvasDrawing
 
-case class GeneratorState[C](
-    action: CanvasAction[C],
+case class GeneratorState(
+    drawing: CanvasDrawing,
     frame: Int
 )
 
-case class StateEvent[C, E](state: GeneratorState[C], event: E)
+case class StateEvent[E](state: GeneratorState, event: E)
 
-trait Generator[C, E] {
-    def next(se: StateEvent[C, E]): GeneratorState[C]
+trait Generator[E] {
+    def next(se: StateEvent[E]): GeneratorState
 }
 
 object Generator {
-    def apply[C, E](f: StateEvent[C, E] => GeneratorState[C]) = new Generator[C, E] {
-        override def next(se: StateEvent[C, E]): GeneratorState[C]  = f(se)
+    def apply[C, E](f: StateEvent[E] => GeneratorState) = new Generator[E] {
+        override def next(se: StateEvent[E]): GeneratorState  = f(se)
     }
 }

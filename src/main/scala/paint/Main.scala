@@ -3,8 +3,10 @@ package paint
 import scala.scalajs.js.annotation.JSExport
 import org.scalajs.dom
 import org.scalajs.dom._
+import org.scalajs.dom.ext.KeyCode
 import paint.Geometry.{DoublePoint, PlaneTransformation, Point}
-import paint.generator.{Generator, GeneratorState, StateEvent, Generator$}
+import paint.canvas.{CanvasAlgebra, CanvasDrawing, DrawHtmlAlgebra, PlaneTransformationAlgebra}
+import paint.generator.{Generator, GeneratorState, StateEvent}
 import paint.html.{NativeRenderingContext, RenderingContext, TransformedCanvasRenderingContext2D}
 
 import scala.scalajs.js
@@ -26,81 +28,70 @@ object Main {
         ctx.fillStyle = "white"
 
         val gen = generator()
-        var currentState = initialState(htmlCanvas)
+        var currentState  = initialState(htmlCanvas)
+        var running = true
+
+        htmlCanvas.onmouseup = (e: dom.MouseEvent) => {
+            val currentDrawing = if (running) currentState.drawing else CanvasDrawing.empty
+            currentState = GeneratorState(
+                CanvasDrawing.append(
+                    currentDrawing,
+                    CanvasDrawing.fillRect(e.clientX, e.clientY, 0.4, 0.4)
+                ),
+                currentState.frame
+            )
+            running = true
+        }
+
+        window.onkeydown = (e: dom.KeyboardEvent) => {
+            if (e.keyCode == KeyCode.Space) {
+                running = !running
+            }
+        }
 
         dom.window.setInterval(
-            () => {
-                val action = currentState.action
-                canvas(action)
-                currentState = gen.next(StateEvent(currentState, Unit))
+            () => if (running) {
+                for (i <- 1 to 10) {
+                    currentState.drawing.draw(DrawHtmlAlgebra).apply(ctx)
+                    currentState = gen.next(StateEvent(currentState, Unit))
+                }
             },
-            100
+            1
         )
     }
 
-    def initialState(htmlCanvas: dom.html.Canvas): GeneratorState[RenderingContext] =
-        GeneratorState[RenderingContext](
-            Canvas.drawSequence[RenderingContext](
-                Canvas.drawPoint(Point(htmlCanvas.width / 2, htmlCanvas.height / 2), 10),
-                Canvas.drawPoint(Point(htmlCanvas.width / 2 + 200, htmlCanvas.height / 2), 10),
-                Canvas.drawPoint(Point(htmlCanvas.width / 2 - 200, htmlCanvas.height / 2), 10)
-            ),
-            0
-        )
+    def initialState(htmlCanvas: dom.html.Canvas, size: Int = 1): GeneratorState =
+        GeneratorState(CanvasDrawing.empty, 0)
 
-    def generator(): Generator[RenderingContext, Unit] = Generator(
-        transition(noiseTransf(1))
+    def initialState2(htmlCanvas: dom.html.Canvas, size: Int = 1): GeneratorState = GeneratorState(
+        new CanvasDrawing {
+            override def draw[T](canvasAlgebra: CanvasAlgebra[T]) = canvasAlgebra.sequence(
+                canvasAlgebra.fillRect(htmlCanvas.width / 2 - 200, htmlCanvas.height / 2, size, size),
+                canvasAlgebra.fillRect(htmlCanvas.width / 2, htmlCanvas.height / 2, size, size),
+                canvasAlgebra.fillRect(htmlCanvas.width / 2 + 200, htmlCanvas.height / 2, size, size),
+                canvasAlgebra.fillRect(htmlCanvas.width / 2, htmlCanvas.height / 2 + 200, size, size),
+                canvasAlgebra.fillRect(htmlCanvas.width / 2, htmlCanvas.height / 2 - 200, size, size)
+            )
+        },
+        0
     )
 
-    def transition(transf: PlaneTransformation)(se: StateEvent[RenderingContext, Unit]): GeneratorState[RenderingContext] = {
+    def generator(): Generator[Unit] = Generator(
+        transition(noiseTransf(3))
+    )
+
+    def transition(transf: PlaneTransformation)(se: StateEvent[Unit]): GeneratorState = {
         GeneratorState(
-            Canvas.drawTransformed(transf)(se.state.action),
+            se.state.drawing.draw(PlaneTransformationAlgebra(transf)),
             se.state.frame + 1
         )
     }
 
-    def noiseTransf(noiseLevel: Int): PlaneTransformation = (point: DoublePoint) => {
+    def noiseTransf(noiseLevel: Double): PlaneTransformation = (point: DoublePoint) => {
         val shift = DoublePoint(
-            Random.nextInt(2 * noiseLevel + 1) - noiseLevel,
-            Random.nextInt(2 * noiseLevel + 1) - noiseLevel
+            Random.nextDouble() * 2 * noiseLevel - noiseLevel,
+            Random.nextDouble() * 2 * noiseLevel - noiseLevel
         )
         point + shift
-    }
-
-    def frame(htmlCanvas: dom.html.Canvas): Seq[Canvas.CanvasAction[RenderingContext]] = {
-        val ctx = htmlCanvas.getContext("2d")
-            .asInstanceOf[dom.CanvasRenderingContext2D]
-        paint.Conf.canvasInitializer.initialise(htmlCanvas)
-        val canvas = paint.Conf.canvas(ctx)
-
-        ctx.fillStyle = "white"
-        val action1 = Canvas.drawSequence[RenderingContext](
-            Canvas.drawPoint(Point(htmlCanvas.width / 2, htmlCanvas.height / 2), 10),
-            Canvas.drawPoint(Point(htmlCanvas.width / 2 + 200, htmlCanvas.height / 2), 10),
-            Canvas.drawPoint(Point(htmlCanvas.width / 2 - 200, htmlCanvas.height / 2), 10)
-            //Canvas.drawPoint(Point(htmlCanvas.width / 2, htmlCanvas.height / 2 + 100), 10)
-        )
-
-        val transformation: PlaneTransformation = (point: DoublePoint) => point / 2
-
-        def noiseTransf(noiseLevel: Int): PlaneTransformation = (point: DoublePoint) => {
-            val radius = noiseLevel / 2
-            val shift = DoublePoint(
-                Random.nextInt(noiseLevel) - radius,
-                Random.nextInt(noiseLevel) - radius
-            )
-            point + shift
-        }
-
-        //val noiser = Canvas.drawAndTransform(noiseTransf(100)) _
-        val noiser = Canvas.drawTransformed(noiseTransf(10)) _
-
-        var action = Canvas.drawNothing
-        var last = action1
-
-        for (i <- 1 to 1000) yield {
-            last = noiser(last)
-            last
-        }
     }
 }
