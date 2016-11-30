@@ -6,7 +6,12 @@ import paint.canvas.CanvasDrawing
 case class GeneratorState(
     drawing: CanvasDrawing,
     frame: Int
-)
+) {
+    def withDrawing(newDrawing: CanvasDrawing): GeneratorState = GeneratorState(
+        newDrawing,
+        frame
+    )
+}
 
 case class StateEvent[E](state: GeneratorState, event: E)
 
