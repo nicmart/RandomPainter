@@ -5,22 +5,26 @@ import paint.canvas.CanvasDrawing
 
 case class GeneratorState(
     drawing: CanvasDrawing,
+    pausedDrawing: Option[CanvasDrawing],
     frame: Int
 ) {
     def withDrawing(newDrawing: CanvasDrawing): GeneratorState = GeneratorState(
         newDrawing,
+        pausedDrawing,
         frame
     )
 }
 
-case class StateEvent[E](state: GeneratorState, event: E)
+case class StateWithEvent[E](state: GeneratorState, event: E)
 
 trait Generator[E] {
-    def next(se: StateEvent[E]): GeneratorState
+    def next(se: StateWithEvent[E]): GeneratorState
 }
 
 object Generator {
-    def apply[C, E](f: StateEvent[E] => GeneratorState) = new Generator[E] {
-        override def next(se: StateEvent[E]): GeneratorState  = f(se)
+    def apply[C, E](f: StateWithEvent[E] => GeneratorState) = new Generator[E] {
+        override def next(se: StateWithEvent[E]): GeneratorState  = {
+            f(se)
+        }
     }
 }
