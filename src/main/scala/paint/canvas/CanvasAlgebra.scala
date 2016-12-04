@@ -18,27 +18,6 @@ trait CanvasDrawing extends Expression[CanvasAlgebra] {
     def apply[T](canvasAlgebra: CanvasAlgebra[T]): T
 }
 
-sealed trait CanvasExpr
-case class FillRect(x: Double, y: Double, w: Double, h: Double) extends CanvasExpr
-case class Sequence(ts: CanvasExpr *) extends CanvasExpr
-
-object ExprCanvasAlgebra extends CanvasAlgebra[CanvasExpr] {
-    override def fillRect(x: Double, y: Double, w: Double, h: Double): CanvasExpr = FillRect(x, y, w, h)
-    override def sequence(ts: CanvasExpr*): CanvasExpr = Sequence(ts: _*)
-
-    def toDrawing(expr: CanvasExpr): CanvasDrawing = expr match {
-        case FillRect(x, y, w, h) => CanvasDrawing.fillRect(x, y, w, h)
-        case s: Sequence => {
-            val drawings = s.ts.map(toDrawing)
-            new CanvasDrawing {
-                override def apply[T](canvasAlgebra: CanvasAlgebra[T]) = canvasAlgebra.sequence(
-                    drawings.map((drawing: CanvasDrawing) => drawing.apply(canvasAlgebra)): _*
-                )
-            }
-        }
-    }
-}
-
 object CanvasDrawing {
     val empty = new CanvasDrawing {
         override def apply[T](canvasAlgebra: CanvasAlgebra[T]) = canvasAlgebra.sequence()
@@ -54,10 +33,6 @@ object CanvasDrawing {
             drawing1.apply(canvasAlgebra),
             drawing2.apply(canvasAlgebra)
         )
-    }
-
-    def flatten(drawing: CanvasDrawing): CanvasDrawing = {
-        ExprCanvasAlgebra.toDrawing(drawing.apply(ExprCanvasAlgebra))
     }
 }
 

@@ -18,9 +18,19 @@ object Geometry
         def +(other: DoublePoint) = DoublePoint(x + other.x, y + other.y)
         def -(other: DoublePoint) = DoublePoint(x - other.x, y - other.y)
         def *(d: Double) = DoublePoint(x * d, y * d)
-        def *(d: Int) = DoublePoint(x * d, y * d)
         def /(d: Double) = DoublePoint(x / d, y / d)
-        def /(d: Int) = DoublePoint(x / d, y / d)
+        def rotate(angle: Double) = {
+            val (cos, sin) = (Math.cos(angle), Math.sin(angle))
+            DoublePoint(
+                cos * x - sin * y,
+                sin * x + cos * y
+            )
+        }
+        def norm(): Double = Math.sqrt(x * x + y * y)
+    }
+
+    object DoublePoint {
+        val zero = DoublePoint(0, 0)
     }
 
     type PlaneTransformation = DoublePoint => DoublePoint

@@ -11,7 +11,4 @@ object Conf {
     lazy val canvasInitializer: CanvasInitializer =
         FullWindowCanvasInitializer(dom.document, dom.window) andThen
         ColorCanvasInitializer("black")
-
-    def canvas(canvasRenderingContext2D: CanvasRenderingContext2D) =
-        PrimitiveCanvas(new NativeRenderingContext(canvasRenderingContext2D))
 }
