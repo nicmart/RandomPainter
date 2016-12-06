@@ -1,6 +1,6 @@
 package paint.generative
 
-import paint.Geometry.DoublePoint
+import paint.geometry.Geometry.DoublePoint
 import paint.algebra.{PaintDrawing, Point}
 
 import scala.util.Random
@@ -29,10 +29,36 @@ object StateTransformation {
         )
     }
 
+    def relativeBrownianVelocityTransformation(strength: Double): Point => PaintDrawing = { p =>
+        val velocityAlteration = DoublePoint(1, 0).rotate(2 * Math.PI * Random.nextDouble()) * strength * p.velocity.norm()
+        val newVelocity = p.velocity + velocityAlteration
+        PaintDrawing.point(
+            p.position + newVelocity,
+            newVelocity,
+            p.size
+        )
+    }
+
     def withSpeedLimit(limit: Double): Point => PaintDrawing = { point => {
         val speed = point.velocity.norm()
         if (speed > limit) {
             val newVelocity = point.velocity * (limit / speed)
+            PaintDrawing.point(
+                point.position,
+                newVelocity,
+                point.size
+            )
+        } else {
+            PaintDrawing.point(
+                point
+            )
+        }
+    }}
+
+    def withSpeedMin(min: Double): Point => PaintDrawing = { point => {
+        val speed = point.velocity.norm()
+        if (speed < min) {
+            val newVelocity = point.velocity * (min / speed)
             PaintDrawing.point(
                 point.position,
                 newVelocity,
@@ -57,6 +83,17 @@ object StateTransformation {
                 elseTransformation.map(_(point)).getOrElse(PaintDrawing.point(point))
             }
         }
+    }
+
+    def withGravity(
+        center: DoublePoint,
+        constant: Double
+    ): Point => PaintDrawing = { point =>
+        val versor = (center - point.position).versor().get
+        val acceleration =  constant * 1 / Math.pow(point.position.distance(center), 2)
+        val gravity = versor * (acceleration * constant)
+        val newVelocity = point.velocity + gravity
+        PaintDrawing.point(point.copy(velocity = newVelocity))
     }
 
     def sizeFloat(strength: Double, min: Double, max: Double): Point => PaintDrawing = { p => {

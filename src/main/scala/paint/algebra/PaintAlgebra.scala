@@ -1,7 +1,7 @@
 package paint.algebra
 
 import org.scalajs.dom.CanvasRenderingContext2D
-import paint.Geometry.DoublePoint
+import paint.geometry.Geometry.DoublePoint
 
 /**
   * Created by nic on 04/12/2016.

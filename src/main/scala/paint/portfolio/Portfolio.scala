@@ -1,9 +1,11 @@
 package paint.portfolio
 
-import paint.Geometry.DoublePoint
+import paint.geometry.Geometry.DoublePoint
 import paint.algebra.{DrawOnCanvasPaintAlgebra, LineDrawOnCanvasPaintAlgebra, PaintDrawing}
-import paint.canvas.events.{AddPoint, CanvasEvent}
+import paint.events.{AddPoint, CanvasEvent}
 import paint.generative._
+
+import scala.util.Random
 
 /**
   * Created by nic on 04/12/2016.
@@ -63,8 +65,8 @@ case class Portfolio(canvasSize: DoublePoint) {
     }
 
     lazy val brownianVelocity: Drawing[CanvasEvent] = {
-        val size = 0.5
-        val noise = 0.3
+        val size = 1
+        val noise = 2
         val speedLimit = 10
         val initialVelocity = DoublePoint.zero
 
@@ -72,6 +74,21 @@ case class Portfolio(canvasSize: DoublePoint) {
             State.empty,
             DefaultInteractionStateTransition(StateTransformation.brownianVelocityTransformation(noise))
                 .flatMap(StateTransformation.withSpeedLimit(speedLimit))
+            ,
+            (position: DoublePoint) => AddPoint(position, initialVelocity, size),
+            LineDrawOnCanvasPaintAlgebra
+        )
+    }
+
+    lazy val brownianVelocityWithRelativeSpeedAlteration: Drawing[CanvasEvent] = {
+        val size = 1
+        val noise = 0.5
+        val speedLimit = 4
+        val initialVelocity = DoublePoint(0.1, 0)
+
+        TransitionDrawing[CanvasEvent](
+            State.empty,
+            DefaultInteractionStateTransition(StateTransformation.relativeBrownianVelocityTransformation(noise))
             ,
             (position: DoublePoint) => AddPoint(position, initialVelocity, size),
             LineDrawOnCanvasPaintAlgebra
@@ -91,6 +108,27 @@ case class Portfolio(canvasSize: DoublePoint) {
                 .flatMap(StateTransformation.sizeFloat(0.4, 0.3, 20))
             ,
             (position: DoublePoint) => AddPoint(position, initialVelocity, size),
+            LineDrawOnCanvasPaintAlgebra
+        )
+    }
+
+    lazy val gravity: Drawing[CanvasEvent] = {
+        val size = 1
+        val noise = 0.1
+        val speedLimit = 10
+        val gravityCenter = canvasSize / 2
+        TransitionDrawing[CanvasEvent](
+            State.empty,
+            DefaultInteractionStateTransition(StateTransformation.brownianVelocityTransformation(noise))
+                .flatMap(StateTransformation.withGravity(gravityCenter, 20))
+                //.flatMap(StateTransformation.withSpeedLimit(speedLimit))
+            ,
+            (position: DoublePoint) => {
+                val initialVelocity = (gravityCenter - position)
+                    .versor()
+                    .get.rotate(Math.PI / 2 + (Random.nextDouble() - 1/2) * 0.5)
+                AddPoint(position, initialVelocity, size)
+            },
             LineDrawOnCanvasPaintAlgebra
         )
     }

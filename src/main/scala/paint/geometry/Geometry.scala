@@ -1,4 +1,4 @@
-package paint
+package paint.geometry
 
 /**
   * Created by nic on 26/11/2016.
@@ -27,6 +27,11 @@ object Geometry
             )
         }
         def norm(): Double = Math.sqrt(x * x + y * y)
+        def distance(other: DoublePoint): Double = (this - other).norm()
+        def versor(): Option[DoublePoint] = {
+            val normValue = norm()
+            if (normValue > 0) Some(this / normValue) else None
+        }
     }
 
     object DoublePoint {

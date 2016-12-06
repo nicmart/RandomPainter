@@ -1,7 +1,7 @@
 package paint.html
 
 import org.scalajs.dom.CanvasRenderingContext2D
-import paint.Geometry.DoublePoint
+import paint.geometry.Geometry.DoublePoint
 
 /**
   * Wrapper on native js rendering context

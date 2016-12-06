@@ -2,7 +2,6 @@ package paint.generative
 
 import paint.Canvas.CanvasAction
 import paint.algebra.PaintDrawing
-import paint.canvas.CanvasDrawing
 
 case class State(
     drawing: PaintDrawing,

@@ -1,8 +1,7 @@
 package paint.generative
 
 import paint.algebra.{PaintDrawing, Point, PointTransformationAlgebra}
-import paint.canvas.CanvasDrawing
-import paint.canvas.events._
+import paint.events._
 
 trait StateTransition[E] {
     def next(se: StateWithEvent[E]): State

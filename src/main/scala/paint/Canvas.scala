@@ -3,7 +3,7 @@ package paint
 import org.scalajs.dom.html
 import org.scalajs.dom.CanvasRenderingContext2D
 import paint.Canvas.CanvasAction
-import paint.Geometry._
+import paint.geometry.Geometry._
 import paint.html._
 
 /**

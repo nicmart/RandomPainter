@@ -1,9 +1,9 @@
 package paint.generative
 
 import org.scalajs.dom.CanvasRenderingContext2D
-import paint.Geometry.DoublePoint
+import paint.geometry.Geometry.DoublePoint
 import paint.algebra.{PaintAlgebra, PaintDrawing, Point}
-import paint.canvas.events.CanvasEvent
+import paint.events.CanvasEvent
 
 /**
   * Created by nic on 04/12/2016.

@@ -4,9 +4,9 @@ import scala.scalajs.js.annotation.JSExport
 import org.scalajs.dom
 import org.scalajs.dom._
 import org.scalajs.dom.ext.KeyCode
-import paint.Geometry.{DoublePoint, PlaneTransformation, Point}
+import paint.geometry.Geometry.{DoublePoint, PlaneTransformation, Point}
 import paint.algebra.{DrawOnCanvasPaintAlgebra, LineDrawOnCanvasPaintAlgebra, NumberOfOperations}
-import paint.canvas.events._
+import paint.events._
 import paint.generative._
 import paint.html.{NativeRenderingContext, RenderingContext, TransformedCanvasRenderingContext2D}
 import paint.portfolio.Portfolio
@@ -31,7 +31,7 @@ object Main {
 
         val canvasSize = DoublePoint(htmlCanvas.width, htmlCanvas.height)
 
-        var drawing: Drawing[CanvasEvent] = Portfolio(canvasSize).brownianMadnessSizeFloat
+        var drawing: Drawing[CanvasEvent] = Portfolio(canvasSize).gravity
         var mouseDown = false
 
         val iterations = 10

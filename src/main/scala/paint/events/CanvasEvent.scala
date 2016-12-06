@@ -1,6 +1,6 @@
-package paint.canvas.events
+package paint.events
 
-import paint.Geometry.DoublePoint
+import paint.geometry.Geometry.DoublePoint
 
 /**
   * Created by nic on 03/12/2016.
