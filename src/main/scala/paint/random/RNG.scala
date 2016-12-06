@@ -7,6 +7,7 @@ import scala.util.Random
   */
 trait RNG {
     def nextInt: (Int, RNG)
+    def nextRNG: RNG = nextInt._2
 }
 
 case class SimpleRNG(seed: Long) extends RNG {

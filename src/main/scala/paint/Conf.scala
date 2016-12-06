@@ -1,8 +1,6 @@
 package paint
 
 import org.scalajs.dom
-import org.scalajs.dom._
-import paint.html.NativeRenderingContext
 
 /**
   * Created by nic on 26/11/2016.

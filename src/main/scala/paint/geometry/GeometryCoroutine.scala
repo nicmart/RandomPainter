@@ -30,6 +30,11 @@ object GeometryCoroutine {
             (start, velocity(start + v, nextVelocityCo))
         }
 
+    def radialVelocity[A](start: DoublePoint, radialVelocityCo: CoRoutine[A, Double]): CoRoutine[A, DoublePoint] =
+        CoRoutine { a =>
+            val (v, nextRadialVelocityCo) = radialVelocityCo.run(a)
+            (start, radialVelocity[A](start.rotate(v), nextRadialVelocityCo))
+        }
 
     /**
       * Evolution of a point determined by the evolution of its acceleration.

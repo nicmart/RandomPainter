@@ -4,12 +4,12 @@ import scala.scalajs.js.annotation.JSExport
 import org.scalajs.dom
 import org.scalajs.dom._
 import org.scalajs.dom.ext.KeyCode
+import paint.canvas.CanvasCoRoutine
+import paint.coroutine.CoRoutine
 import paint.geometry.Geometry.{DoublePoint, PlaneTransformation, Point}
-import paint.algebra.{DrawOnCanvasPaintAlgebra, LineDrawOnCanvasPaintAlgebra, NumberOfOperations}
 import paint.events._
 import paint.generative._
-import paint.html.{NativeRenderingContext, RenderingContext, TransformedCanvasRenderingContext2D}
-import paint.portfolio.Portfolio
+import paint.portfolio.{CoRoutinePortfolio, Portfolio}
 
 import scala.scalajs.js
 import scala.util.Random
@@ -31,15 +31,19 @@ object Main {
 
         val canvasSize = DoublePoint(htmlCanvas.width, htmlCanvas.height)
 
-        var drawing: Drawing[CanvasEvent] = Portfolio(canvasSize).gravity
-        var mouseDown = false
+        var drawing: CoRoutine[Unit, CanvasRenderingContext2D => Unit] =
+            CoRoutine.const(_ => ())
 
         val iterations = 10
 
+        var mouseDown = false
+
         def draw(t: Double): Unit = {
+
             for (i <- 1 to iterations) {
-                drawing.draw().apply(ctx)
-                drawing = drawing.event(Tick)
+                val (drw, nextDrawing) = drawing.run(())
+                drw(ctx)
+                drawing = nextDrawing
             }
 
             window.requestAnimationFrame(draw)
@@ -65,11 +69,17 @@ object Main {
 
         htmlCanvas.onmousedown = (e: dom.MouseEvent) => {
             mouseDown = true
-            drawing = drawing.event(drawing.newPoint(DoublePoint(e.clientX, e.clientY)))
+            drawing = CanvasCoRoutine.append(
+                drawing,
+                CoRoutinePortfolio.test2(DoublePoint(e.clientX, e.clientY))
+            )
         }
 
         htmlCanvas.onmousemove = (e: dom.MouseEvent) => if (mouseDown) {
-            drawing = drawing.event(drawing.newPoint(DoublePoint(e.clientX, e.clientY)))
+            drawing = CanvasCoRoutine.append(
+                drawing,
+                CoRoutinePortfolio.test2(DoublePoint(e.clientX, e.clientY))
+            )
         }
 
         htmlCanvas.onmouseup = (e: dom.MouseEvent) => {
@@ -78,7 +88,7 @@ object Main {
 
         window.onkeydown = (e: dom.KeyboardEvent) => {
             if (e.keyCode == KeyCode.Space) {
-                drawing = drawing.event(Toggle)
+                //drawing = drawing.event(Toggle)
             }
         }
         dom.window.requestAnimationFrame(draw)

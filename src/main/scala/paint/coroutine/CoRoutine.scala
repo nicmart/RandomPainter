@@ -31,6 +31,18 @@ case class CoRoutine[A, B](run: A => (B, CoRoutine[A,B])) {
             val (c, ac) = co.run(a)
             ((b, c), ab.zipWith(ac))
         }
+
+    def tail(): CoRoutine[A, B] =
+        CoRoutine { a =>
+            run(a)._2.run(a)
+        }
+
+    def pairs(): CoRoutine[A, (B, B)] =
+        CoRoutine { a =>
+            val (b1, next1Co) = run(a)
+            val (b2, next2Co) = next1Co.run(a)
+            ((b1, b2), next2Co.pairs())
+        }
 }
 
 object CoRoutine {

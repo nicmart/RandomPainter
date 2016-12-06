@@ -1,6 +1,5 @@
 package paint.generative
 
-import paint.Canvas.CanvasAction
 import paint.algebra.PaintDrawing
 
 case class State(
