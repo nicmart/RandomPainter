@@ -34,7 +34,7 @@ object Main {
         var drawing: CoRoutine[Unit, CanvasRenderingContext2D => Unit] =
             CoRoutine.const(_ => ())
 
-        val iterations = 10
+        val iterations = 50
 
         var mouseDown = false
 
@@ -97,5 +97,5 @@ object Main {
     }
 
     def drawingFromMouseEvent(e: dom.MouseEvent) =
-        CoRoutinePortfolio.test5(DoublePoint(e.clientX, e.clientY))
+        CoRoutinePortfolio.test7(DoublePoint(e.clientX, e.clientY) * 2)
 }

@@ -3,7 +3,7 @@ package paint.coroutine
 /**
   * Created by nic on 05/12/2016.
   */
-case class CoRoutine[A, B](run: A => (B, CoRoutine[A,B])) {
+case class CoRoutine[A, +B](run: A => (B, CoRoutine[A,B])) {
 
     def map[C](f: B => C): CoRoutine[A, C] =
         CoRoutine { a =>
@@ -11,7 +11,7 @@ case class CoRoutine[A, B](run: A => (B, CoRoutine[A,B])) {
             (f(b), next.map(f))
         }
 
-    def andThen[C](co: CoRoutine[B, C]): CoRoutine[A, C] =
+    def andThen[C >: B, D](co: CoRoutine[C, D]): CoRoutine[A, D] =
         CoRoutine { a =>
             val (b, next) = run(a)
             val (c, nextCo) = co.run(b)
@@ -44,7 +44,7 @@ case class CoRoutine[A, B](run: A => (B, CoRoutine[A,B])) {
             ((b1, b2), next2Co.pairs())
         }
 
-    def sliding(n: Int, bs: Vector[B] = Vector()): CoRoutine[A, Vector[B]] =
+    def sliding[C >: B](n: Int, bs: Vector[C] = Vector()): CoRoutine[A, Vector[C]] =
         CoRoutine { a =>
             val (b, nextCo) = run(a)
             val nextBs = bs.takeRight(n - 1) :+ b

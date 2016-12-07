@@ -17,8 +17,10 @@ trait CanvasInitializer { self =>
 case class FullWindowCanvasInitializer(document: Document, window: Window) extends CanvasInitializer {
     def initialise(canvas: dom.html.Canvas): Unit = {
         val (width, height) = windowSize(document, window)
-        canvas.width = width
-        canvas.height = height
+        canvas.width = 2 * width
+        canvas.height = 2 * height
+        canvas.style.width = s"${width}px"
+        canvas.style.height = s"${height}px"
     }
 
     private def windowSize(document: Document, window: Window) = (

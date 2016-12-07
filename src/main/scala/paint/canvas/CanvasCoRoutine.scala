@@ -41,6 +41,24 @@ object CanvasCoRoutine {
             }
         }
 
+    def drawPathWithSize[A](pointsWithSize: CoRoutine[A, (Double, Vector[DoublePoint])]): CoRoutine[A, CanvasRenderingContext2D => Unit] =
+        pointsWithSize.map { case (size, points) =>
+        { context =>
+            if (points.length > 1) {
+                context.lineWidth = size
+                context.strokeStyle = "white"
+                context.beginPath()
+                context.moveTo(points.head.x, points.head.y)
+                for (point <- points.drop(1)) {
+                    context.lineTo(point.x, point.y)
+                }
+                context.stroke()
+            } else {
+                ()
+            }
+        }
+        }
+
     def append[A](
         drawing: CoRoutine[A, CanvasRenderingContext2D => Unit],
         to: CoRoutine[A, CanvasRenderingContext2D => Unit]
