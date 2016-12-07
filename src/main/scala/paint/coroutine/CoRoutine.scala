@@ -43,6 +43,13 @@ case class CoRoutine[A, B](run: A => (B, CoRoutine[A,B])) {
             val (b2, next2Co) = next1Co.run(a)
             ((b1, b2), next2Co.pairs())
         }
+
+    def sliding(n: Int, bs: Vector[B] = Vector()): CoRoutine[A, Vector[B]] =
+        CoRoutine { a =>
+            val (b, nextCo) = run(a)
+            val nextBs = bs.takeRight(n - 1) :+ b
+            (nextBs, nextCo.sliding(n, nextBs))
+        }
 }
 
 object CoRoutine {

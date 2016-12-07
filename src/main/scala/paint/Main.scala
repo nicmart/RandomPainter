@@ -71,14 +71,14 @@ object Main {
             mouseDown = true
             drawing = CanvasCoRoutine.append(
                 drawing,
-                CoRoutinePortfolio.test2(DoublePoint(e.clientX, e.clientY))
+                drawingFromMouseEvent(e)
             )
         }
 
         htmlCanvas.onmousemove = (e: dom.MouseEvent) => if (mouseDown) {
             drawing = CanvasCoRoutine.append(
                 drawing,
-                CoRoutinePortfolio.test2(DoublePoint(e.clientX, e.clientY))
+                drawingFromMouseEvent(e)
             )
         }
 
@@ -86,11 +86,16 @@ object Main {
             mouseDown = false
         }
 
+
+
         window.onkeydown = (e: dom.KeyboardEvent) => {
             if (e.keyCode == KeyCode.Space) {
-                //drawing = drawing.event(Toggle)
+                drawing = CanvasCoRoutine.empty
             }
         }
         dom.window.requestAnimationFrame(draw)
     }
+
+    def drawingFromMouseEvent(e: dom.MouseEvent) =
+        CoRoutinePortfolio.test5(DoublePoint(e.clientX, e.clientY))
 }

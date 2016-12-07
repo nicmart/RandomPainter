@@ -32,6 +32,7 @@ object Geometry
             val normValue = norm()
             if (normValue > 0) Some(this / normValue) else None
         }
+        def rounded(): DoublePoint = DoublePoint(x.toInt + 0.5, y.toInt + 0.5)
     }
 
     object DoublePoint {

@@ -13,10 +13,13 @@ object NumberCoRoutines {
             (integer, int(nextRng))
         }
 
+    def limitedInt(rng: RNG, max: Int): CoRoutine[Unit, Int] =
+        double(rng).map { d => (max * d).toInt }
+
     def double(rng: RNG): CoRoutine[Unit, Double] =
         CoRoutine { _ =>
             val (integer, nextRng) = rng.nextInt
-            val d = integer / (Int.MaxValue.toDouble - Int.MinValue)
+            val d = (integer.toDouble - Int.MinValue) / (Int.MaxValue.toDouble - Int.MinValue)
             (d, double(nextRng))
         }
 
