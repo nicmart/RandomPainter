@@ -7,6 +7,10 @@ import paint.geometry.Geometry.DoublePoint
 import paint.geometry.GeometryCoroutine
 import paint.random.{NumberCoRoutines, RNG, RandomCoRoutines, SimpleRNG}
 
+import cats._
+import cats.data._
+import cats.implicits._
+
 import scala.util.Random
 
 /**
@@ -117,17 +121,31 @@ object CoRoutinePortfolio {
     }
 
     def test4(start: DoublePoint): CoRoutine[Unit, CanvasRenderingContext2D => Unit] = {
-        CanvasCoRoutine.drawPath[Unit](2, test4Point(start).sliding(2))
+        CanvasCoRoutine.drawPath[Unit](0.5, test4Point(start).sliding(2))
     }
 
     def test5(start: DoublePoint): CoRoutine[Unit, CanvasRenderingContext2D => Unit] = {
+        val initialDirection = DoublePoint(0.1, 0).rotate(Random.nextDouble() * 2 * Math.PI)
+
         val pointRel = radialVelocity(
-            DoublePoint(10, 0),
-            CoRoutine.const[Unit, Double](0.2)
+            DoublePoint(50, 0),
+            CoRoutine.const[Unit, Double](0.005)
         )
 
-        val point = relative(test4Point(start), pointRel)
-        CanvasCoRoutine.drawPath[Unit](2, point.sliding(2))
+        val pointRel2 = radialVelocity(
+            DoublePoint(10, 0),
+            CoRoutine.const[Unit, Double](0.1)
+        )
+
+        val line = velocity[Unit](start, const(initialDirection))
+
+        //val point = relative(test4Point(start), pointRel)
+        val point = relative(line, pointRel)
+
+
+        val point2 = relative(point, pointRel2)
+
+        CanvasCoRoutine.drawPath[Unit](1, point2.sliding(2))
     }
 
     def test6(start: DoublePoint): CoRoutine[Unit, CanvasRenderingContext2D => Unit] = {
@@ -158,7 +176,98 @@ object CoRoutinePortfolio {
         val speed = 3
         val rng = SimpleRNG(Random.nextLong())
         val v = Rnd.pointInDisk(rng, speed)
-        CanvasCoRoutine.drawPath(0.5, velocity[Unit](start, v).sliding(2))
+        CanvasCoRoutine.drawPath(0.1, velocity[Unit](start, v).sliding(2))
+    }
+
+    def test8(start: DoublePoint): CoRoutine[Unit, CanvasRenderingContext2D => Unit] = {
+        val speed = 10
+        val rng = SimpleRNG(Random.nextLong())
+        val rng2 = SimpleRNG(Random.nextLong())
+        val v = Rnd.pointInDisk(rng, speed)
+
+        val vs = Vector(
+            v,
+            const[Unit, DoublePoint](DoublePoint(1, 0))
+        )
+
+        val relPointCo: CoRoutine[Unit, DoublePoint] = choose(
+            bernoulli(0.001, SimpleRNG(Random.nextLong())),
+            limitedInt(rng2, vs.length).map { vs(_) },
+            v
+        )
+        //val relPointCo = velocity[Unit](DoublePoint.zero, v)
+
+        val centerCo = velocity[Unit](
+            start,
+            radialVelocity(
+                DoublePoint(5, 0),
+                CoRoutine.const[Unit, Double](0.01)
+            )
+        )
+
+        val centerLinearCo = velocity[Unit](
+            start,
+            const(DoublePoint(0.01, 0))
+        )
+
+        val pointCo = relative(centerCo, relPointCo)
+
+        CanvasCoRoutine.drawPath(0.5, pointCo.sliding(2))
+    }
+
+    def test9(start: DoublePoint): CoRoutine[Unit, CanvasRenderingContext2D => Unit] = {
+        val frameCo = fold[Unit, Int]((_, n) => n + 1)(1)
+        Random.nextGaussian()
+        val sizeCo = normal[Unit](SimpleRNG(Random.nextLong()), 5, 4)
+        val pointCo = velocity[Unit](
+            start,
+            const(DoublePoint(10, 0))
+        )
+
+        CanvasCoRoutine.drawPathWithSize(sizeCo.zipWith(pointCo.sliding(2)))
+    }
+
+    def test10(start: DoublePoint): CoRoutine[Unit, CanvasRenderingContext2D => Unit] = {
+        val sizeCoDerivative = normal[Unit](SimpleRNG(Random.nextLong()), 0, 0)
+        val angleCoDerivative = normal[Unit](SimpleRNG(Random.nextLong()), 0.005, 0.02)
+
+        val sizeCo = integrate(sizeCoDerivative)(1).map(d => Math.min(Math.max(d, 0.3), 2))
+        val angleCo = integrate(angleCoDerivative)(0)
+
+        val pointCo = integrate(angleCo.map(DoublePoint(1, 0).rotate(_)))(start)
+
+        //val speeds = pointCo.sliding
+
+        CanvasCoRoutine.drawPathWithSize(sizeCo.zipWith(pointCo.sliding(2)))
+    }
+
+    def test11(start: DoublePoint): CoRoutine[Unit, CanvasRenderingContext2D => Unit] = {
+        val sizeCoDerivative = normal[Unit](SimpleRNG(Random.nextLong()), 0, 0)
+        val angleCoDerivative = const(0.01)
+        val normDerivative = integrate(const(0.000001))(0)
+
+        val sizeCo = integrate(sizeCoDerivative)(1).map(d => Math.min(Math.max(d, 0.3), 2))
+        val angleCo = integrate(angleCoDerivative)(0)
+        val normCo = integrate(normDerivative)(0.000001)
+        val velCo = CoRoutine.map2(angleCo, normCo)((angle, norm) => DoublePoint(norm, 0).rotate(angle))
+
+        val pointCo = integrate(velCo)(start)
+
+        //val speeds = pointCo.sliding
+
+        CanvasCoRoutine.drawPathWithSize(sizeCo.zipWith(pointCo.sliding(2)))
+    }
+
+    def test12(start: DoublePoint): CoRoutine[Unit, CanvasRenderingContext2D => Unit] = {
+        val speed = 10
+        val rng = SimpleRNG(Random.nextLong())
+        val rng2 = SimpleRNG(Random.nextLong())
+        val v = Rnd.pointInDisk(rng, speed)
+
+        val lineCo: CoRoutine[Unit, DoublePoint] = velocity(start, const(DoublePoint(1, 0)))
+        val sizeCo: CoDouble[Unit] = boundedDouble1[Unit](1, 4, 5, 5)(double(rng))
+
+        CanvasCoRoutine.drawPathWithSize[Unit](sizeCo zipWith lineCo.sliding(2))
     }
 
     object Rnd {

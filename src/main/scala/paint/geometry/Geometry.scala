@@ -1,5 +1,7 @@
 package paint.geometry
 
+import cats.kernel.Monoid
+
 /**
   * Created by nic on 26/11/2016.
   */
@@ -37,7 +39,14 @@ object Geometry
 
     object DoublePoint {
         val zero = DoublePoint(0, 0)
+
+        implicit val pointMonoid = new Monoid[DoublePoint] {
+            override def empty: DoublePoint = zero
+            override def combine(x: DoublePoint, y: DoublePoint): DoublePoint = x + y
+        }
     }
+
+
 
     type PlaneTransformation = DoublePoint => DoublePoint
 }

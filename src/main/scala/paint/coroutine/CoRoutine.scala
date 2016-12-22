@@ -1,9 +1,12 @@
 package paint.coroutine
 
+import cats.Semigroup
+import cats.syntax.semigroup._
+
 /**
   * Created by nic on 05/12/2016.
   */
-case class CoRoutine[A, +B](run: A => (B, CoRoutine[A,B])) {
+case class CoRoutine[-A, +B](run: A => (B, CoRoutine[A,B])) {
 
     def map[C](f: B => C): CoRoutine[A, C] =
         CoRoutine { a =>
@@ -25,7 +28,7 @@ case class CoRoutine[A, +B](run: A => (B, CoRoutine[A,B])) {
             ((b, d), next1 zip next2)
         }
 
-    def zipWith[C](co: CoRoutine[A, C]): CoRoutine[A, (B, C)] =
+    def zipWith[C <: A, D](co: CoRoutine[C, D]): CoRoutine[C, (B, D)] =
         CoRoutine { a =>
             val (b, ab) = run(a)
             val (c, ac) = co.run(a)
@@ -50,6 +53,8 @@ case class CoRoutine[A, +B](run: A => (B, CoRoutine[A,B])) {
             val nextBs = bs.takeRight(n - 1) :+ b
             (nextBs, nextCo.sliding(n, nextBs))
         }
+
+    //def grouped(n: Int):
 }
 
 object CoRoutine {
@@ -62,6 +67,32 @@ object CoRoutine {
     def const[A, B](value: B): CoRoutine[A, B] = func { _ => value }
 
     def id[A]: CoRoutine[A, A] = func(identity)
+
+    def map2[A, B, C, D](cob: CoRoutine[A, B], coc: CoRoutine[A, C])(f: (B, C) => D): CoRoutine[A, D] =
+        CoRoutine { a =>
+            val (b, nextCob) = cob.run(a)
+            val (c, nextCoc) = coc.run(a)
+            (f(b, c), map2(nextCob, nextCoc)(f))
+        }
+
+    def traverse[A, B, C](as: List[B])(f: B => CoRoutine[A, C]): CoRoutine[A, List[C]] =
+        as.foldRight(const[A, List[C]](List[C]()))((b, cbs) => map2(f(b), cbs)(_ :: _))
+
+    def sequence[A, B](cos: List[CoRoutine[A, B]]): CoRoutine[A, List[B]] =
+        traverse(cos)(identity)
+
+    def fold[A, B](f: (A, B) => B)(start: B): CoRoutine[A, B] =
+        CoRoutine { a =>
+            val next = f(a, start)
+            (next, fold(f)(next))
+        }
+
+    def foldMap[A, B, Z](co: CoRoutine[A, B])(z: Z)(f: (B, Z) => Z): CoRoutine[A, Z] =
+        CoRoutine { a =>
+            val (b, nextCo) = co.run(a)
+            val zNext = f(b, z)
+            (zNext, foldMap(nextCo)(zNext)(f))
+        }
 
     def first[A, B, C](co: CoRoutine[A, B]): CoRoutine[(A, C), (B, C)] =
         co.zip(id)
@@ -82,5 +113,11 @@ object CoRoutine {
     def fromStream[A](stream: Stream[A]): CoRoutine[Unit, A] =
         CoRoutine { _ =>
             (stream.head, fromStream(stream.tail))
+        }
+
+    def integrate[A, B: Semigroup](derivativeCo: CoRoutine[A, B])(start: B): CoRoutine[A, B] =
+        CoRoutine { a =>
+            val (b, nextDerivativeCo) = derivativeCo.run(a)
+            (start, integrate(nextDerivativeCo)(start |+| b))
         }
 }

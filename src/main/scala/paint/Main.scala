@@ -97,5 +97,5 @@ object Main {
     }
 
     def drawingFromMouseEvent(e: dom.MouseEvent) =
-        CoRoutinePortfolio.test7(DoublePoint(e.clientX, e.clientY) * 2)
+        CoRoutinePortfolio.test12(DoublePoint(e.clientX, e.clientY) * 2)
 }
