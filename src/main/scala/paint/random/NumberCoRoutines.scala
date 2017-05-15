@@ -64,14 +64,24 @@ object NumberCoRoutines {
         CoRoutine { a =>
             val (d, nextDoubles) = doubles.run(a)
             val variation = (d * 2 - 1) * strength * (1 - Math.abs(center - current) / radius)
-            if (current + variation < 0) {
-                println (center - current)
-                println(variation)
-                println(current + variation)
-            }
             (
                 current + variation,
                 boundedDouble1(strength, radius, center, current + variation)(nextDoubles)
+            )
+        }
+
+    def boundedDouble2[A](strength: Double, radius: Double, center: Double, current: Double)(doubles: CoDouble[A]): CoDouble[A] =
+        CoRoutine { a =>
+            val (d, nextDoubles) = doubles.run(a)
+            val variation = (d * 2 - 1) * strength
+            val newCurrent = if (Math.abs(current + variation - center) > radius){
+                current
+            } else {
+                current + variation
+            }
+            (
+                newCurrent,
+                boundedDouble2(strength, radius, center, newCurrent)(nextDoubles)
             )
         }
 }

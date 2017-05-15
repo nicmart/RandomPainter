@@ -7,13 +7,7 @@ import org.scalajs.dom.ext.KeyCode
 import paint.canvas.CanvasCoRoutine
 import paint.coroutine.CoRoutine
 import paint.geometry.Geometry.{DoublePoint, PlaneTransformation, Point}
-import paint.events._
-import paint.generative._
-import paint.portfolio.{CoRoutinePortfolio, Portfolio}
-
-import scala.scalajs.js
-import scala.util.Random
-import scala.collection.immutable._
+import paint.portfolio.CoRoutinePortfolio
 
 @JSExport
 object Main {
@@ -42,7 +36,6 @@ object Main {
 
             for (i <- 1 to iterations) {
                 val (drw, nextDrawing) = drawing.run(())
-                drw(ctx)
                 drawing = nextDrawing
             }
 
@@ -97,5 +90,5 @@ object Main {
     }
 
     def drawingFromMouseEvent(e: dom.MouseEvent) =
-        CoRoutinePortfolio.test12(DoublePoint(e.clientX, e.clientY) * 2)
+        CoRoutinePortfolio.test9(DoublePoint(e.clientX, e.clientY) * 2)
 }

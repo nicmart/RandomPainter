@@ -40,10 +40,20 @@ object Geometry
     object DoublePoint {
         val zero = DoublePoint(0, 0)
 
+        def polar(radius: Double, angle: Double) = {
+            val positiveRadius = Math.abs(radius)
+            DoublePoint(
+                positiveRadius * Math.cos(angle),
+                positiveRadius * Math.sin(angle)
+            )
+        }
+
         implicit val pointMonoid = new Monoid[DoublePoint] {
             override def empty: DoublePoint = zero
             override def combine(x: DoublePoint, y: DoublePoint): DoublePoint = x + y
         }
+
+
     }
 
 

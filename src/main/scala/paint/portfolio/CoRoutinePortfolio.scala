@@ -258,6 +258,8 @@ object CoRoutinePortfolio {
         CanvasCoRoutine.drawPathWithSize(sizeCo.zipWith(pointCo.sliding(2)))
     }
 
+    // Variable size version 2
+    // This can be a good starting point on adding the input as a source of state change
     def test12(start: DoublePoint): CoRoutine[Unit, CanvasRenderingContext2D => Unit] = {
         val speed = 10
         val rng = SimpleRNG(Random.nextLong())
@@ -265,9 +267,39 @@ object CoRoutinePortfolio {
         val v = Rnd.pointInDisk(rng, speed)
 
         val lineCo: CoRoutine[Unit, DoublePoint] = velocity(start, const(DoublePoint(1, 0)))
-        val sizeCo: CoDouble[Unit] = boundedDouble1[Unit](1, 4, 5, 5)(double(rng))
+
+        // The last argument is the current size, a good candidate to be changed by user input
+        val sizeCo: CoDouble[Unit] = boundedDouble2[Unit](1, 15, 21, 20)(double(rng))
+
+        // Even better to start with a constant size
+        //val sizeCo: CoDouble[Unit] = const(2)
 
         CanvasCoRoutine.drawPathWithSize[Unit](sizeCo zipWith lineCo.sliding(2))
+    }
+
+    def test13(start: DoublePoint): CoRoutine[Unit, CanvasRenderingContext2D => Unit] = {
+        val speed = 3
+        val rng = SimpleRNG(Random.nextLong())
+        val rng2 = SimpleRNG(Random.nextLong())
+        val v = Rnd.pointInDisk(rng, speed)
+
+        val lineCo: CoRoutine[Unit, DoublePoint] = velocity[Unit](start, v)
+        val sizeCo: CoDouble[Unit] = boundedDouble2[Unit](.1, 1.5, 1.5, 1)(double(rng))
+
+        CanvasCoRoutine.drawPathWithSize[Unit](sizeCo zipWith lineCo.sliding(2))
+    }
+
+    def test14(start: DoublePoint): CoRoutine[Unit, CanvasRenderingContext2D => Unit] = {
+        val rng = SimpleRNG(Random.nextLong())
+        val rng2 = SimpleRNG(Random.nextLong())
+        val sizeCo: CoDouble[Unit] = boundedDouble2[Unit](.2, 1.9, 2, 1)(double(rng))
+        val v = Rnd.pointInDisk(rng2, 1).zipWith(sizeCo).map { case (vel, size) => vel * 5 }
+
+        val rndCo: CoRoutine[Unit, DoublePoint] = velocity[Unit](DoublePoint.zero, v)
+        val lineCo: CoRoutine[Unit, DoublePoint] = velocity(start, const(DoublePoint(1, 0) * 0.05))
+        val pointCo: CoRoutine[Unit, DoublePoint] = relative(lineCo, rndCo)
+
+        CanvasCoRoutine.drawPathWithSize[Unit](sizeCo zipWith pointCo.sliding(2))
     }
 
     object Rnd {

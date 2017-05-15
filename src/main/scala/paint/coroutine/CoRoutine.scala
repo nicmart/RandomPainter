@@ -14,6 +14,36 @@ case class CoRoutine[-A, +B](run: A => (B, CoRoutine[A,B])) {
             (f(b), next.map(f))
         }
 
+    def flatMap[AA <: A, C](f: B => CoRoutine[AA, C]): CoRoutine[AA, C] = CoRoutine { aa =>
+        val (b, co2) = run(aa)
+        val (c, co3) = f(b).run(aa)
+        (c, co2.flatMap(f))
+    }
+
+    def mapp[C](f: B => C): CoRoutine[A, C] =
+        flatMap(b => CoRoutine.const[A, C](f(b)))
+
+    /**
+      * {{
+      * flatMap(b => CoRoutine.const[A, C](f(b)))
+      * CoRoutine { aa =>
+            val (b, co2) = run(aa)
+            val (c, co3) = CoRoutine.const[A, C](f(b)).run(aa)
+            (c, co2.flatMap(b => CoRoutine.const[A, C](f(b))))
+        }
+      * CoRoutine { aa =>
+            val (b, co2) = run(aa)
+            val (c, co3) = (f(b), const...)
+            (c, co2.flatMap(b => CoRoutine.const[A, C](f(b))))
+        }
+      * CoRoutine { aa =>
+            val (b, co2) = run(aa)
+            val (c, co3) = (f(b), const...)
+            (f(b), co2.map(f))
+        }
+      * }}
+      */
+
     def andThen[C >: B, D](co: CoRoutine[C, D]): CoRoutine[A, D] =
         CoRoutine { a =>
             val (b, next) = run(a)
