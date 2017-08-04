@@ -18,3 +18,7 @@ case class SimpleRNG(seed: Long) extends RNG {
         (n, nextRNG)
     }
 }
+
+case class SequenceRNG(from: Int) extends RNG {
+    override def nextInt: (Int, RNG) = (from, SequenceRNG(from + 1))
+}

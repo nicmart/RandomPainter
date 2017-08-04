@@ -52,8 +52,6 @@ object Geometry
             override def empty: DoublePoint = zero
             override def combine(x: DoublePoint, y: DoublePoint): DoublePoint = x + y
         }
-
-
     }
 
 

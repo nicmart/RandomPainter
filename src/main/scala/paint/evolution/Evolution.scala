@@ -1,8 +1,9 @@
 package paint.evolution
 
-import paint.random.RNG
+import paint.random.{RNG, SimpleRNG}
 
 import scala.collection.immutable.{Queue, Stream}
+import scala.util.Random
 
 /**
   * Created by Nicolò Martini on 12/05/2017.
@@ -25,6 +26,12 @@ case class Evolution[A](run: RNG => (RNG, A, Evolution[A])) {
     def compose[B, C](evb: Evolution[B])(f: (A, B) => C): Evolution[C] =
         Evolution.map2(f)(this, evb)
 
+    def perturbate(perturbations: Evolution[A => A]): Evolution[A] =
+        perturbations.flatNext(p => map(p))((ps2, eva2) => eva2.perturbate(ps2))
+
+    def next(nextEv: Evolution[A]): Evolution[A] =
+        mapEv[A]((a: A, _: Evolution[A]) => (a, nextEv))
+
     def flatNext[B](f: A => Evolution[B])(g: (Evolution[A], Evolution[B]) => Evolution[B]): Evolution[B] =
         Evolution { rng =>
             val (rng2, a, eva2) = run(rng)
@@ -38,8 +45,8 @@ case class Evolution[A](run: RNG => (RNG, A, Evolution[A])) {
     def replace[B](f: A => Evolution[B]): Evolution[B] =
         flatNext(f)((_, evb) => evb)
 
-    def scan[Z](f: (Z, A) => Z)(z: Z): Evolution[Z] =
-        mapEv(f(z, _), (a, eva) => eva.scan(f)(f(z, a)))
+    def scan[Z](z: Z)(f: (Z, A) => Z): Evolution[Z] =
+        mapEv(f(z, _), (a, eva) => eva.scan(f(z, a))(f))
 
     def prepend(as: List[A]): Evolution[A] = Evolution { rng =>
         as match {
@@ -55,13 +62,17 @@ case class Evolution[A](run: RNG => (RNG, A, Evolution[A])) {
     }
 
     def tail: Evolution[A] = Evolution { rng =>
-        run(rng)._3.run(rng)
+        val (rng2, a, eva2) = run(rng)
+        eva2.run(rng2)
     }
 
     def drop(n: Int): Evolution[A] = n match {
         case _ if n <= 0 => this
         case _ => tail.drop(n - 1)
     }
+
+    def zip[B](evb: Evolution[B]): Evolution[(A, B)] =
+        compose(evb)((_, _))
 
     def speedUp(skip: Int): Evolution[A] =
         mapEv(a => a, (_, eva) => eva.drop(skip).speedUp(skip))
@@ -107,5 +118,16 @@ object Evolution {
         evas.replace { as =>
             prepend(as)(flatten(evas.tail))
         }
+    }
+
+    def sample[A](eva: Evolution[A], n: Int = 10): List[A] =
+        eva.unfold(SimpleRNG(Random.nextLong())).take(n).toList
+
+    def debug[A](eva: Evolution[A], n: Int = 10)(rng: Option[RNG] = None): List[(RNG, A)] = n match {
+        case 0 => Nil
+        case _ =>
+            val (rng2, a, eva2) = eva.run(rng.getOrElse(SimpleRNG(Random.nextLong())))
+            (rng2, a) :: debug(eva2, n - 1)(Some(rng2))
+
     }
 }
